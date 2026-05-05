@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sakura Brick 11v11 Football</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --home: #2f7df6;
+      --away: #f04c45;
+      --accent: #f3c944;
+      --panel: rgba(10, 15, 24, 0.66);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #f7f7fb;
+      --muted: rgba(247, 247, 251, 0.7);
+      --toast: rgba(243, 201, 68, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at top, #223347 0%, #06080d 75%);
+      color: var(--text);
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .ui {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .scoreboard,
+    .panel,
+    .goal-toast {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.25);
+    }
+
+    .scoreboard {
+      min-width: 360px;
+      padding: 14px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .team {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .team.away {
+      justify-content: flex-end;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+    }
+
+    .home .swatch {
+      background: var(--home);
+    }
+
+    .away .swatch {
+      background: var(--away);
+    }
+
+    .center-block {
+      text-align: center;
+      min-width: 124px;
+    }
+
+    .score {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.04em;
+    }
+
+    .timer {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 18px;
+    }
+
+    .panel {
+      width: min(460px, calc(100vw - 36px));
+      padding: 14px 16px;
+    }
+
+    .panel h1,
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      line-height: 1.2;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .panel strong {
+      color: var(--text);
+    }
+
+    .meta-line {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .charge-wrap {
+      margin-top: 12px;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .charge-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #fff2a0);
+      box-shadow: 0 0 18px rgba(243, 201, 68, 0.4);
+      transition: width 60ms linear;
+    }
+
+    .goal-toast {
+      align-self: center;
+      padding: 16px 26px;
+      margin-top: 10px;
+      color: #fff8d6;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(-26px) scale(0.92);
+      transition: opacity 260ms ease, transform 260ms ease;
+      background:
+        linear-gradient(135deg, rgba(243, 201, 68, 0.28), rgba(255, 255, 255, 0.06)),
+        var(--panel);
+      border-color: rgba(243, 201, 68, 0.4);
+    }
+
+    .goal-toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .center-message {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    }
+
+    .center-message .big {
+      font-size: clamp(28px, 5vw, 58px);
+      line-height: 1;
+    }
+
+    .center-message .small {
+      margin-top: 10px;
+      font-size: clamp(10px, 1.4vw, 14px);
+      color: rgba(255, 255, 255, 0.72);
+    }
+  </style>
+</head>
+<body>
+  <div class="ui">
+    <div class="topbar">
+      <div class="scoreboard">
+        <div class="team home">
+          <span class="swatch"></span>
+          <span>Sakura Brick</span>
+        </div>
+        <div class="center-block">
+          <div id="score" class="score">0 - 0</div>
+          <div id="timer" class="timer">03:00</div>
+        </div>
+        <div class="team away">
+          <span>Akai United</span>
+          <span class="swatch"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="goalToast" class="goal-toast">Goal</div>
+
+    <div class="bottom-row">
+      <div class="panel">
+        <h1>Sakura Brick 11v11 Football</h1>
+        <p>
+          <strong>WASD</strong> move, <strong>Shift</strong> sprint, <strong>J</strong> pass,
+          <strong>K</strong> charged shot, <strong>L</strong> through ball, <strong>Space</strong> charged shot,
+          <strong>Q</strong> switch player, <strong>R</strong> restart kickoff.
+        </p>
+        <p style="margin-top:8px;">
+          <strong>Xbox</strong> LS move, RT sprint, A switch, Y pass, B through ball, LB shoot.
+        </p>
+        <div class="meta-line">
+          <span id="statusText">Kickoff ready</span>
+          <span id="controllerText">Keyboard only</span>
+        </div>
+        <div class="charge-wrap">
+          <div id="chargeBar" class="charge-bar"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="width:min(360px, calc(100vw - 36px));">
+        <h2>Match Notes</h2>
+        <p>
+          Three-minute quick match on a 110m x 68m pitch with 22 players, PBR materials,
+          dynamic shadows, and a Sakura-themed stadium edge.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="center-message" id="centerMessage">
+    <div class="big" id="centerBig">Kickoff</div>
+    <div class="small" id="centerSmall">Sakura Brick quick match</div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
+
